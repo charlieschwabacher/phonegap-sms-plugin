@@ -18,32 +18,34 @@
 
 - (void)send:(CDVInvokedUrlCommand*)command {
 	
-	// MFMessageComposeViewController has been availible since iOS 4.0. There should be no issue with using it straight.
-	if(![MFMessageComposeViewController canSendText]) {
-		UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Notice"
-														message:@"SMS Text not available."
-													   delegate:self
-											  cancelButtonTitle:@"OK"
-											  otherButtonTitles:nil];
-		[alert show];
-		return;
-	}
+	[self.commandDelegate runInBackground:^{
+		if(![MFMessageComposeViewController canSendText]) {
+			UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Notice"
+									message:@"SMS Text not available."
+								       delegate:self
+							      cancelButtonTitle:@"OK"
+							      otherButtonTitles:nil];
+			[alert show];
+			return;
+		}
+	
+		MFMessageComposeViewController *composeViewController = [[MFMessageComposeViewController alloc] init];
+		composeViewController.messageComposeDelegate = self;
+	
+		NSString* body = [command.arguments objectAtIndex:1];
+		if (body != nil) {
+			[composeViewController setBody:body];
+		}
+	
+		NSArray* recipients = [command.arguments objectAtIndex:0];
+		if (recipients != nil) {
+			[composeViewController setRecipients:recipients];
+		}
 		
-	MFMessageComposeViewController *composeViewController = [[MFMessageComposeViewController alloc] init];
-	composeViewController.messageComposeDelegate = self;
-
-	NSString* body = [command.arguments objectAtIndex:1];
-	if (body != nil) {
-		[composeViewController setBody:body];
-	}
-
-	NSArray* recipients = [command.arguments objectAtIndex:0];
-	if (recipients != nil) {
-		[composeViewController setRecipients:recipients];
-	}
-
-	[self.viewController presentViewController:composeViewController animated:YES completion:nil];
-	[[UIApplication sharedApplication] setStatusBarHidden:YES];
+		self._callbackId = command.callbackId;
+	
+		[self.viewController presentViewController:composeViewController animated:YES completion:nil];
+	}];
 }
 
 #pragma mark - MFMessageComposeViewControllerDelegate Implementation
@@ -61,7 +63,7 @@
 			break;
 
 		case MessageComposeResultSent:
-			pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
+			pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
 			webviewResult = 1;
 			break;
 
@@ -79,7 +81,7 @@
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
 	// [[UIApplication sharedApplication] setStatusBarHidden:NO];// Note: I put this in because it seemed to be missing.
 	
-	[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+	[self.commandDelegate sendPluginResult:pluginResult callbackId:self._callbackId];
 }
 
 @end
