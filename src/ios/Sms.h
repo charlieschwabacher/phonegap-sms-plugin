@@ -12,7 +12,9 @@
 #import <MessageUI/MessageUI.h>
 #import <MessageUI/MFMessageComposeViewController.h>
 
-@interface Sms : CDVPlugin <MFMessageComposeViewControllerDelegate>
+@interface Sms : CDVPlugin <MFMessageComposeViewControllerDelegate> {
+  NSString* _callbackId;
+}
 
 - (void)send:(CDVInvokedUrlCommand*)command;
 
