@@ -49,31 +49,37 @@
 #pragma mark - MFMessageComposeViewControllerDelegate Implementation
 // Dismisses the composition interface when users tap Cancel or Send. Proceeds to update the message field with the result of the operation.
 - (void)messageComposeViewController:(MFMessageComposeViewController *)controller didFinishWithResult:(MessageComposeResult)result {
+	
 	// Notifies users about errors associated with the interface
+	CDVPluginResult* pluginResult = nil;
 	int webviewResult = 0;
 
 	switch (result) {
 		case MessageComposeResultCancelled:
+			[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"cancelled"];
 			webviewResult = 0;
 			break;
 
 		case MessageComposeResultSent:
+			pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
 			webviewResult = 1;
 			break;
 
 		case MessageComposeResultFailed:
+			[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"failed"];
 			webviewResult = 2;
 			break;
 
 		default:
+			[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"error"];
 			webviewResult = 3;
 			break;
 	}
 
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
-	[[UIApplication sharedApplication] setStatusBarHidden:NO];	// Note: I put this in because it seemed to be missing.
+	// [[UIApplication sharedApplication] setStatusBarHidden:NO];// Note: I put this in because it seemed to be missing.
 	
-	[self writeJavascript:[NSString stringWithFormat:@"window.plugins.sms._didFinishWithResult(%d);", webviewResult]];
+	[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 @end
